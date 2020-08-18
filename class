@@ -1,0 +1,42 @@
+public class UserController extends TriggerHandler{
+
+ public override void afterUpdate(){
+        System.debug('UserController.afterUpdate trigger - Start');
+           
+        List<User> myUsers = [select Id, ManagerId from User where Id IN : Trigger.new];
+        Set<Id> changedManager = new Set<Id>();
+        
+         for(User user: myUsers)
+        {
+            User oldUser = (User) Trigger.oldMap.get(user.id);
+            if(user.ManagerId != oldUser.ManagerId && user.Name != 'Banca Progetto Admin'){
+                changedManager.add(user.Id);
+            }
+    	}
+        UserController.AfterUpdate(changedManager);
+     
+        System.debug('UserController.afterUpdate trigger - End');   
+    }
+    
+    
+    @future
+    public static void AfterUpdate(Set<Id> userIds){
+        System.debug('UserController.AfterUpdate - Start');
+     
+        List<Account> newAcc = new List<Account>();
+        List<Account> myAccs = [select Id, Manager_NomeCompleto__c, Manager_ID__c from Account where ownerId IN : userIds];
+        
+        for (Account acc : myAccs) {
+            
+            if(acc.Manager_ID__c != null){
+                
+                acc.Manager_NomeCompleto__c = acc.Manager_ID__c;
+                newAcc.add(acc);
+            }
+            
+        }
+        
+        System.debug('UserController.AfterUpdate - End');
+        update newAcc;
+}
+}
